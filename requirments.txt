@@ -1,0 +1,7 @@
+flask
+flask-bcrypt
+flask-login
+firebase-admin
+autopep8
+PyMuPDF
+scikit-learn
