@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-yellow-400 to-orange-500 flex flex-col items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg relative">
+        <!-- Logout Button -->
+        <a href="{{ url_for('logout') }}"
+           class="absolute top-4 right-4 bg-red-500 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md transition">
+            Logout
+        </a>
+
+        <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Student Dashboard</h2>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for category, message in messages %}
+                        <div class="p-3 rounded-md text-center text-sm
+                            {% if category == 'danger' %} bg-red-100 text-red-700 border border-red-500
+                            {% elif category == 'success' %} bg-green-100 text-green-700 border border-green-500
+                            {% elif category == 'warning' %} bg-yellow-100 text-yellow-700 border border-yellow-500
+                            {% else %} bg-gray-100 text-gray-700 {% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Enter Subject Code Form -->
+        <form action="/student_dashboard" method="POST" class="space-y-4">
+            <input type="text" name="subject_code" placeholder="Enter Subject Code"
+                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 transition" required>
+
+            <button type="submit"
+                    class="w-full bg-orange-500 text-white p-3 rounded-md font-semibold hover:bg-orange-600 transform transition">
+                Get Subject Data
+            </button>
+        </form>
+
+        <hr class="my-6">
+
+        <!-- Display Subject Data -->
+        {% if subject %}
+            <div class="bg-green-100 p-4 rounded-md text-center">
+                <h3 class="text-xl font-semibold text-green-700">Subject Found!</h3>
+                <p class="text-gray-700">Subject: <strong>{{ subject.subject_name }}</strong></p>
+                <p class="text-gray-700">Code: <span class="font-mono">{{ subject.subject_code }}</span></p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
