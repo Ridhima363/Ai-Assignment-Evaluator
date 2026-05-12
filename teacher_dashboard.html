@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation Tabs -->
+    <div class="bg-blue-500 text-white py-4">
+        <div class="container mx-auto flex justify-between items-center px-4">
+            <div class="flex space-x-10">
+                <button onclick="showTab('home')" id="home-tab"
+                        class="tab-btn text-lg font-semibold px-6 py-2 bg-white text-blue-700 rounded-t-lg shadow-lg">
+                    Home
+                </button>
+                <button onclick="showTab('evaluation')" id="evaluation-tab"
+                        class="tab-btn text-lg font-semibold px-6 py-2 hover:bg-white hover:text-blue-700 transition">
+                    Evaluation
+                </button>
+            </div>
+            <a href="{{ url_for('logout') }}"
+               class="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition">
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Home Tab (Teacher Dashboard) -->
+    <div id="home" class="tab-content p-6">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+            <h2 class="text-3xl font-bold text-gray-800">Welcome {{ name }} !!</h2>
+            <p class="text-gray-600">Manage your subjects below:</p>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mt-4 mb-6 space-y-2">
+                        {% for category, message in messages %}
+                            <div class="p-3 rounded-md text-center text-sm
+                                {% if category == 'danger' %} bg-red-100 text-red-700 border border-red-500
+                                {% elif category == 'success' %} bg-green-100 text-green-700 border border-green-500
+                                {% elif category == 'warning' %} bg-yellow-100 text-yellow-700 border border-yellow-500
+                                {% else %} bg-gray-100 text-gray-700 {% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Existing Subjects List -->
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold text-gray-700">Your Subjects</h3>
+                <ul class="mt-2">
+                    {% for subject in subjects %}
+                        <li class="bg-gray-100 p-4 rounded-md shadow my-2 flex justify-between items-center">
+                            <div>
+                                <span class="font-semibold">{{ subject.subject_name }}</span>
+                                (Code: <span class="font-mono">{{ subject.subject_code }}</span>)
+                            </div>
+                            <a href="{{ url_for('get_base_pdf', subject_code=subject.subject_code) }}"
+                               class="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition">
+                                📄 View Base PDF
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Add New Subject Form -->
+            <div class="mt-6 bg-gray-50 p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Add New Subject</h3>
+                <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <input type="text" name="subject_name" placeholder="Enter Subject Name"
+                           class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    <select name=" beforescript
+                    afterscript
+                    <select name="language" required
+                            class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        <option value="python">Python</option>
+                        <option value="c">C</option>
+                    </select>
+                    <input type="file" name="file" accept="application/pdf" required
+                           class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                    <button type="submit"
+                            class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition">
+                        ➕ Add Subject & Upload PDF
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Tab -->
+    <div id="evaluation" class="tab-content p-6 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800">Evaluations</h2>
+            <p class="text-gray-600 mb-4">Select a subject to view all student submissions and their evaluations.</p>
+
+            <!-- Subject Selection Form -->
+            <form method="POST" class="mb-6">
+                <label for="subject_code" class="block text-gray-700 font-bold">Select Subject:</label>
+                <select name="subject_code" id="subject_code" required
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                    <option value="" disabled selected>Select a subject</option>
+                    {% for subject in subjects %}
+                        <option value="{{ subject.subject_code }}" {% if selected_subject and selected_subject.subject_code == subject.subject_code %}selected{% endif %}>
+                            {{ subject.subject_name }} ({{ subject.subject_code }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit"
+                        class="mt-2 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition">
+                    📊 Load Submissions
+                </button>
+            </form>
+
+            <!-- Submissions Categories -->
+            {% if selected_subject %}
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Submissions for {{ selected_subject.subject_name }}</h3>
+
+                <!-- First Accurate Submission -->
+                {% if first_accurate %}
+                    <div class="mb-6">
+                        <h4 class="text-xl font-semibold text-green-700">First Accurate Submission</h4>
+                        <div class="bg-gray-100 p-4 rounded-md shadow mt-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span class="font-semibold">{{ first_accurate.student_name }}</span>
+                                    <p class="text-sm text-gray-600">Submitted on: {{ first_accurate.submission_time_str | default('N/A') }}</p>
+                                    <p class="text-gray-600 font-medium">Evaluation Results:</p>
+                                    <ul class="list-disc pl-5 text-sm text-gray-700">
+                                        {% for result in first_accurate.evaluation_result.split('\n') %}
+                                            {% if result.strip() %}
+                                                <li>{{ result }}</li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <a href="{{ url_for('get_pdf', student_id=first_accurate.student_id, subject_code=selected_subject.subject_code) }}"
+                                   class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition">
+                                    📄 View Submission
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Accurate but Late Submissions -->
+                {% if accurate_but_late %}
+                    <div class="mb-6">
+                        <h4 class="text-xl font-semibold text-blue-700">Accurate but Late Submissions (Plagiarism Checked)</h4>
+                        <ul class="space-y-4 mt-2">
+                            {% for submission in accurate_but_late %}
+                                <li class="bg-gray-100 p-4 rounded-md shadow">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <span class="font-semibold">{{ submission.student_name }}</span>
+                                            <p class="text-sm text-gray-600">Submitted on: {{ submission.submission_time_str | default('N/A') }}</p>
+                                            <p class="text-gray-600 font-medium">Evaluation Results:</p>
+                                            <ul class="list-disc pl-5 text-sm text-gray-700">
+                                                {% for result in submission.evaluation_result.split('\n') %}
+                                                    {% if result.strip() %}
+                                                        <li>{{ result }}</li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </ul>
+                                            <p class="text-gray-600 mt-2">Plagiarism Percentage: <span class="font-semibold">{{ submission.plagiarism_percentage }}%</span></p>
+                                        </div>
+                                        <a href="{{ url_for('get_pdf', student_id=submission.student_id, subject_code=selected_subject.subject_code) }}"
+                                           class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition">
+                                            📄 View Submission
+                                        </a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <!-- Incorrect Submissions -->
+                {% if incorrect %}
+                    <div class="mb-6">
+                        <h4 class="text-xl font-semibold text-red-700">Incorrect Submissions</h4>
+                        <ul class="space-y-4 mt-2">
+                            {% for submission in incorrect %}
+                                <li class="bg-gray-100 p-4 rounded-md shadow">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <span class="font-semibold">{{ submission.student_name }}</span>
+                                            <p class="text-sm text-gray-600">Submitted on: {{ submission.submission_time_str | default('N/A') }}</p>
+                                            <p class="text-gray-600 font-medium">Evaluation Results:</p>
+                                            <ul class="list-disc pl-5 text-sm text-gray-700">
+                                                {% for result in submission.evaluation_result.split('\n') %}
+                                                    {% if result.strip() %}
+                                                        <li>{{ result }}</li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        <a href="{{ url_for('get_pdf', student_id=submission.student_id, subject_code=selected_subject.subject_code) }}"
+                                           class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition">
+                                            📄 View Submission
+                                        </a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {% if not first_accurate and not accurate_but_late and not incorrect %}
+                    <p class="text-gray-600">No submissions found for this subject.</p>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- JavaScript for Tabs -->
+    <script>
+        function showTab(tabName) {
+            document.getElementById('home').classList.add('hidden');
+            document.getElementById('evaluation').classList.add('hidden');
+            document.getElementById(tabName).classList.remove('hidden');
+
+            document.getElementById('home-tab').classList.remove('bg-white', 'text-blue-700', 'rounded-t-lg', 'shadow-lg');
+            document.getElementById('evaluation-tab').classList.remove('bg-white', 'text-blue-700', 'rounded-t-lg', 'shadow-lg');
+
+            document.getElementById(tabName + '-tab').classList.add('bg-white', 'text-blue-700', 'rounded-t-lg', 'shadow-lg');
+        }
+
+        {% if show_evaluation %}
+            showTab('evaluation');
+        {% else %}
+            showTab('home');
+        {% endif %}
+    </script>
+</body>
+</html>
